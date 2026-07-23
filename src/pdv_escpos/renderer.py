@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from base64 import b64encode
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -29,6 +30,15 @@ class ReceiptRenderer:
             raise ValueError(f"Unknown template: {template_name}")
 
         stylesheet = (template_dir / "style.css").read_text(encoding="utf-8")
+        font_path = template_dir / "assets" / "font.ttf"
+        if font_path.is_file():
+            font_data = b64encode(font_path.read_bytes()).decode("ascii")
+            stylesheet = (
+                '@font-face { font-family: "ReceiptPixel"; '
+                f'src: url("data:font/ttf;base64,{font_data}") format("truetype"); '
+                "font-style: normal; font-weight: 400; font-display: block; }\n"
+                + stylesheet
+            )
         template = self.environment.get_template(f"{template_name}/template.html.j2")
         return template.render(**context, stylesheet=stylesheet, receipt_width=width)
 

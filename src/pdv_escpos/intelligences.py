@@ -85,7 +85,7 @@ def _signal_for(value: float, rng: random.Random) -> str:
 
 
 def _constellation(
-    readings: Sequence[Reading], width: int = 29, height: int = 7
+    readings: Sequence[Reading], width: int = 39, height: int = 10
 ) -> list[str]:
     field = [[" " for _ in range(width)] for _ in range(height)]
     points: list[tuple[int, int]] = []

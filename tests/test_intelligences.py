@@ -25,7 +25,7 @@ def test_observation_is_reproducible_and_matches_question_count() -> None:
     assert first == second
     assert first["question_count"] == 5
     assert len(first["readings"]) == 5  # type: ignore[arg-type]
-    assert len(first["constellation"]) == 7  # type: ignore[arg-type]
+    assert len(first["constellation"]) == 10  # type: ignore[arg-type]
 
 
 def test_responses_and_manual_coordinates_are_preserved() -> None:
@@ -67,7 +67,7 @@ def test_many_identical_responses_generate_a_complete_constellation() -> None:
     )
 
     assert len(observation["readings"]) == 20  # type: ignore[arg-type]
-    assert len(observation["constellation"]) == 7  # type: ignore[arg-type]
+    assert len(observation["constellation"]) == 10  # type: ignore[arg-type]
 
 
 def test_intelligences_template_renders_at_printer_width() -> None:

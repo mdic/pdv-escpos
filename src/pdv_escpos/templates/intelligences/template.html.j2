@@ -57,9 +57,9 @@
         </dl>
 
         <figure class="star-map" aria-label="Generated constellation plot">
-          <div class="axis">+-----------------------------+</div>
-          {% for row in constellation %}<pre>|{{ "%-29s" | format(row) }}|</pre>{% endfor %}
-          <div class="axis">+-----------------------------+</div>
+          <div class="sky">
+            {% for row in constellation %}<pre>{{ "%-39s" | format(row) }}</pre>{% endfor %}
+          </div>
           <figcaption>RELATIONAL FIELD / NORMALISED 0-100</figcaption>
         </figure>
       </section>

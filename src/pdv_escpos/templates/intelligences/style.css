@@ -2,49 +2,50 @@
 html, body { margin: 0; padding: 0; background: #fff; color: #000; }
 body {
   width: 100%;
-  font-family: "Liberation Mono", "Courier New", Courier, monospace;
+  font-family: "ReceiptPixel", "Liberation Mono", "Courier New", monospace;
   font-synthesis: none;
+  -webkit-font-smoothing: none;
 }
 .receipt {
   width: 100%;
-  padding: 10px 10px 26px;
+  padding: 12px 10px 30px;
   overflow: hidden;
   background: #fff;
-  font-size: 12px;
-  line-height: 1.25;
+  font-size: 20px;
+  line-height: 1.08;
 }
 header { text-align: center; }
 .calibration {
-  padding: 4px 0;
-  border-top: 1px solid #000;
-  border-bottom: 1px solid #000;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: .03em;
+  padding: 6px 0 5px;
+  border-top: 2px solid #000;
+  border-bottom: 2px solid #000;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: .01em;
   white-space: nowrap;
 }
 .installation {
-  margin: 14px 0 2px;
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: .06em;
+  margin: 18px 0 3px;
+  font-size: 32px;
+  line-height: .95;
+  letter-spacing: .035em;
 }
 h1 {
-  margin: 5px 0 7px;
-  font-size: 33px;
-  line-height: .95;
-  letter-spacing: -.06em;
+  margin: 7px 0 8px;
+  font-size: 48px;
+  font-weight: 400;
+  line-height: .82;
+  letter-spacing: -.025em;
 }
-.instrument { margin: 0 0 12px; font-size: 8px; font-weight: 700; }
-section { margin-top: 17px; }
-.ruled { border-top: 2px solid #000; border-bottom: 1px solid #000; }
-.metadata { padding: 7px 0; }
+.instrument { margin: 0 0 16px; font-size: 15px; }
+section { margin-top: 22px; }
+.ruled { border-top: 3px solid #000; border-bottom: 2px solid #000; }
+.metadata { padding: 9px 0 8px; }
 .metadata div, .values div {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 8px;
+  gap: 5px;
 }
 .metadata div::before, .values div::before {
   order: 2;
@@ -54,37 +55,47 @@ section { margin-top: 17px; }
   white-space: nowrap;
 }
 .metadata span, .values dt { order: 1; margin: 0; white-space: nowrap; }
-.metadata strong, .values dd { order: 3; margin: 0; text-align: right; }
+.metadata strong, .values dd { order: 3; margin: 0; text-align: right; white-space: nowrap; }
 .metadata div + div { margin-top: 3px; }
 h2 {
-  margin: 0 0 8px;
-  padding: 4px 5px 3px;
-  border: 1px solid #000;
+  margin: 0 0 10px;
+  padding: 6px 7px 5px;
+  border: 2px solid #000;
   background: #000;
   color: #fff;
-  font-size: 11px;
-  letter-spacing: .04em;
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: .025em;
   text-align: left;
 }
 .values { margin: 0; }
-.values div + div { margin-top: 3px; }
-.readings { margin: 0; padding: 0; border-top: 1px solid #000; list-style: none; }
-.readings li { padding: 7px 0 6px; border-bottom: 1px dashed #000; }
-.reading-line { display: grid; grid-template-columns: 24px 1fr 40px; gap: 5px; }
+.values div + div { margin-top: 4px; }
+.readings { margin: 0; padding: 0; border-top: 2px solid #000; list-style: none; }
+.readings li { padding: 10px 0 9px; border-bottom: 2px dashed #000; }
+.reading-line { display: grid; grid-template-columns: 27px 1fr 49px; gap: 5px; }
 .reading-index, .metric, .reading-line strong { white-space: nowrap; }
-.metric { overflow: hidden; font-weight: 700; }
-.reading-line strong { text-align: right; }
-.signal { margin: 3px 0 0 29px; font-size: 10px; letter-spacing: .02em; }
-.star-map { margin: 14px auto 0; text-align: center; }
-.star-map pre, .star-map .axis {
+.metric { overflow: hidden; }
+.reading-line strong { font-weight: 400; text-align: right; }
+.signal { margin: 4px 0 0 32px; font-size: 18px; letter-spacing: .015em; }
+.star-map { width: 100%; margin: 18px 0 0; text-align: center; }
+.sky {
+  width: 100%;
+  padding: 7px 5px 6px;
+  overflow: hidden;
+  border: 2px solid #000;
+  text-align: left;
+}
+.sky pre {
+  width: 100%;
   margin: 0;
-  font: 11px/1 "Liberation Mono", "Courier New", Courier, monospace;
+  font: 18px/1 "ReceiptPixel", "Liberation Mono", "Courier New", monospace;
+  letter-spacing: 0;
   white-space: pre;
 }
-.star-map figcaption { margin-top: 6px; font-size: 8px; font-weight: 700; }
-footer { margin-top: 19px; border-top: 2px solid #000; text-align: center; }
-.catalogue { margin-top: 9px; padding: 6px; border: 1px solid #000; font-size: 9px; }
-.catalogue strong { display: block; margin-top: 3px; font-size: 13px; overflow-wrap: anywhere; }
-footer p { margin: 9px 0 0; font-size: 10px; font-weight: 700; }
-footer .disclaimer { font-size: 8px; font-weight: 400; }
-.end-mark { margin-top: 15px; font-size: 9px; font-weight: 700; }
+.star-map figcaption { margin-top: 8px; font-size: 15px; }
+footer { margin-top: 24px; border-top: 3px solid #000; text-align: center; }
+.catalogue { margin-top: 12px; padding: 8px; border: 2px solid #000; font-size: 16px; }
+.catalogue strong { display: block; margin-top: 4px; font-size: 23px; font-weight: 400; overflow-wrap: anywhere; }
+footer p { margin: 12px 0 0; font-size: 18px; }
+footer .disclaimer { font-size: 14px; }
+.end-mark { margin-top: 18px; font-size: 16px; }
