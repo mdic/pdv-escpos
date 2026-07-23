@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width={{ receipt_width }}, initial-scale=1" />
+    <style>{{ stylesheet | safe }}</style>
+  </head>
+  <body>
+    <article id="receipt" class="receipt" aria-label="Synthetic constellation readout">
+      <header>
+        <div class="calibration">+---[ SYNTHETIC OBSERVATION ARRAY ]---+</div>
+        <p class="installation">TRACCIARE COSTELLAZIONI<br />DI SIGNIFICATO</p>
+        <h1>INTELLIGENZE</h1>
+        <p class="instrument">DEEP-SPACE SEMANTIC READOUT / REV.01</p>
+      </header>
+
+      <section class="metadata ruled">
+        <div><span>OBSERVATION</span><strong>{{ observation_id }}</strong></div>
+        <div><span>TIMESTAMP</span><strong>{{ timestamp }}</strong></div>
+        <div><span>QUESTIONS</span><strong>{{ "%02d" | format(question_count) }}</strong></div>
+      </section>
+
+      <section>
+        <h2>INTERPRETATIVE COORDINATES</h2>
+        <dl class="values">
+          <div><dt>RA-SYN</dt><dd>{{ coordinates.ra }}</dd></div>
+          <div><dt>DEC-SYN</dt><dd>{{ coordinates.dec }}</dd></div>
+          <div><dt>DEPTH VECTOR</dt><dd>{{ coordinates.depth }}</dd></div>
+          <div><dt>SIGNAL ORIGIN</dt><dd>{{ coordinates.origin }}</dd></div>
+        </dl>
+      </section>
+
+      <section>
+        <h2>RESPONSE SPECTRUM</h2>
+        <ol class="readings">
+          {% for reading in readings %}
+          <li>
+            <div class="reading-line">
+              <span class="reading-index">{{ "%02d" | format(reading.index) }}</span>
+              <span class="metric">{{ reading.metric }}</span>
+              <strong>{{ "%05.1f" | format(reading.value) }}</strong>
+            </div>
+            <div class="signal">SIGNAL: {{ reading.signal }}</div>
+          </li>
+          {% endfor %}
+        </ol>
+      </section>
+
+      <section>
+        <h2>CONSTELLATION ANALYSIS</h2>
+        <dl class="values">
+          <div><dt>NODES DETECTED</dt><dd>{{ analysis.nodes }}</dd></div>
+          <div><dt>MEAN RESONANCE</dt><dd>{{ "%05.1f" | format(analysis.mean_resonance) }}</dd></div>
+          <div><dt>COHERENCE INDEX</dt><dd>{{ "%.2f" | format(analysis.coherence_index) }}</dd></div>
+          <div><dt>SEMANTIC MAGNITUDE</dt><dd>{{ "%+.1f" | format(analysis.semantic_magnitude) }}</dd></div>
+          <div><dt>PATTERN</dt><dd>{{ analysis.pattern }}</dd></div>
+        </dl>
+
+        <figure class="star-map" aria-label="Generated constellation plot">
+          <div class="axis">+-----------------------------+</div>
+          {% for row in constellation %}<pre>|{{ "%-29s" | format(row) }}|</pre>{% endfor %}
+          <div class="axis">+-----------------------------+</div>
+          <figcaption>RELATIONAL FIELD / NORMALISED 0-100</figcaption>
+        </figure>
+      </section>
+
+      <footer>
+        <div class="catalogue">CATALOGUE ID<br /><strong>{{ catalogue_id }}</strong></div>
+        <p>STATUS ........ OBSERVATION STORED</p>
+        <p class="disclaimer">SYNTHETIC COORDINATES / NON-ASTRONOMICAL DATA</p>
+        <div class="end-mark">* * * END OF READOUT * * *</div>
+      </footer>
+    </article>
+  </body>
+</html>

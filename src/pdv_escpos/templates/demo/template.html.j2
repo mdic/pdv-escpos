@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width={{ receipt_width }}, initial-scale=1" />
+    <style>{{ stylesheet | safe }}</style>
+  </head>
+  <body>
+    <article id="receipt" class="receipt" aria-label="Thermal dispatch">
+      <div class="system-bar">
+        <span>PDV / ESC·POS</span>
+        <span>{{ reference }}</span>
+      </div>
+
+      <header class="brand">
+        <div class="brand-rule" aria-hidden="true"></div>
+        <div>
+          <p class="brand-name">PDV</p>
+          <p class="kicker">HTML/CSS thermal output system</p>
+        </div>
+      </header>
+
+      <section class="hero">
+        <span class="status">{{ status }}</span>
+        <h1>{{ title }}</h1>
+        <p class="subtitle">{{ subtitle }}</p>
+      </section>
+
+      <section class="section">
+        <h2><span>01</span> Dispatch</h2>
+        <p class="message">{{ message }}</p>
+      </section>
+
+      {% if items %}
+      <section class="section">
+        <h2><span>02</span> Items</h2>
+        <ol class="items">
+          {% for item in items %}
+          <li><span class="item-number">{{ "%02d" | format(loop.index) }}</span><span>{{ item }}</span></li>
+          {% endfor %}
+        </ol>
+      </section>
+      {% endif %}
+
+      <div class="readout">
+        <div><span>Mode</span><strong>Raster</strong></div>
+        <div><span>Width</span><strong>{{ receipt_width }} px</strong></div>
+        <div><span>Ref</span><strong>{{ reference }}</strong></div>
+      </div>
+
+      <footer>
+        <div class="continuity" aria-hidden="true"><i></i><b></b><i></i><b></b><i></i></div>
+        <p>{{ footer }}</p>
+      </footer>
+    </article>
+  </body>
+</html>
