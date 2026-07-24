@@ -4,6 +4,8 @@ A Python prototype that renders receipt templates from HTML and CSS with Playwri
 
 The project is managed entirely by [`uv`](https://docs.astral.sh/uv/). Use `uv add` to change dependencies; do not use `uv pip`.
 
+The modular CLI uses Click directly. Typer 0.26 and later vendors Click and no longer supports Click-specific plug-ins or extracting and extending the underlying Click application; direct Click groups and options are therefore used for commands discovered dynamically from YAML manifests.
+
 ## Pipeline
 
 ```text
@@ -90,45 +92,57 @@ Show available commands:
 uv run pdv-escpos --help
 ```
 
-The CLI syntax is:
+Template modules are discovered automatically from `src/pdv_escpos/templates/`. List them with:
+
+```shell
+uv run pdv-escpos templates
+```
+
+The modular CLI syntax is:
 
 ```text
-uv run pdv-escpos COMMAND [COMMAND OPTIONS]
+uv run pdv-escpos MODULE ACTION [OPTIONS]
 ```
 
-Options belong to a specific command and must come after `render`, `build` or `print`. For example, this is valid:
+For example:
 
 ```shell
-uv run pdv-escpos render --output output/preview.png
+uv run pdv-escpos intelligences render --questions 5
 ```
 
-This is not valid because `--output` is not a global option:
+Options belong to a specific action and must come after `render`, `build` or `print`. This is valid:
 
 ```shell
-uv run pdv-escpos --output output/preview.png render
+uv run pdv-escpos intelligences render --output output/preview.png
 ```
 
-The commands handle output differently:
-
-| Command    | `--output` / `-o` | Result                                 | Opens the USB printer |
-| ---------- | ----------------- | -------------------------------------- | --------------------- |
-| `render`   | yes               | writes a PNG preview                   | no                    |
-| `build`    | yes               | writes a raw ESC/POS `.bin` job        | no                    |
-| `print`    | no                | sends the rendered job directly to USB | yes                   |
-| `usb-info` | no                | displays detected USB devices          | no                    |
-
-Use the command-specific help whenever an option is rejected:
+This is not valid because `--output` belongs to `render`, not to the `intelligences` group:
 
 ```shell
-uv run pdv-escpos render --help
-uv run pdv-escpos build --help
-uv run pdv-escpos print --help
+uv run pdv-escpos intelligences --output output/preview.png render
+```
+
+Each module exposes the same core actions:
+
+| Action   | `--output` / `-o` | Result                                 | Opens the USB printer |
+| -------- | ----------------- | -------------------------------------- | --------------------- |
+| `render` | yes               | writes a PNG preview                   | no                    |
+| `build`  | yes               | writes a raw ESC/POS `.bin` job        | no                    |
+| `print`  | no                | sends the rendered job directly to USB | yes                   |
+
+`templates` and `usb-info` are root utility commands and do not belong to a module. Use module-specific help whenever an option is rejected:
+
+```shell
+uv run pdv-escpos intelligences --help
+uv run pdv-escpos intelligences render --help
+uv run pdv-escpos intelligences build --help
+uv run pdv-escpos intelligences print --help
 ```
 
 ### Render a PNG preview
 
 ```shell
-uv run pdv-escpos render \
+uv run pdv-escpos demo render \
   --title "Continuity breach" \
   --subtitle "Recovery order" \
   --message "Restore the relay before the next pressure cycle." \
@@ -144,7 +158,7 @@ No printer is accessed by `render`.
 ### Build a raw ESC/POS job
 
 ```shell
-uv run pdv-escpos build \
+uv run pdv-escpos demo build \
   --title "Continuity breach" \
   --item "Enter through service lock C" \
   --output output/dispatch.bin
@@ -157,7 +171,7 @@ This uses the `python-escpos` Dummy printer and does not open the USB device.
 `print` does not accept `--output`: it sends the generated ESC/POS job directly to the configured USB device. Use `render` first if a PNG preview is required, or `build` if the raw ESC/POS bytes must be saved.
 
 ```shell
-uv run pdv-escpos print \
+uv run pdv-escpos demo print \
   --title "Continuity breach" \
   --subtitle "Recovery order" \
   --message "Restore the relay before the next pressure cycle." \
@@ -172,7 +186,7 @@ The cutter is disabled by default because the capabilities of the detected print
 USB IDs can be overridden without changing the configuration file:
 
 ```shell
-uv run pdv-escpos print --vendor-id 0x28e9 --product-id 0x0289
+uv run pdv-escpos demo print --vendor-id 0x28e9 --product-id 0x0289
 ```
 
 ### Inspect USB devices
@@ -196,35 +210,91 @@ uv run pdv-escpos usb-info
 
 A width of 384 dots is a common starting point for 58 mm printers. It must be adjusted if the printer uses a different printable width.
 
-## Templates
+## Template modules
 
-Templates live inside `src/pdv_escpos/templates/`. Each template directory contains:
+Every directory inside `src/pdv_escpos/templates/` that contains a valid `template.yaml` is discovered automatically and registered as a CLI group. Adding or removing a module does not require editing the core CLI.
+
+A complete module can contain:
 
 ```text
-template.html.j2
-style.css
+src/pdv_escpos/templates/example/
+├── template.yaml
+├── generator.py          # optional
+├── template.html.j2
+├── style.css
+└── assets/
+    ├── font.ttf          # optional
+    └── licence.txt
 ```
 
-The root printable element must have `id="receipt"`. Playwright captures that element at a device scale factor of 1, so one CSS pixel corresponds to one printer dot.
+`template.yaml` is required. HTML, stylesheet and generator filenames are declared by the manifest. The generator is optional: a declarative module passes parsed option values directly to Jinja2, while a generated module uses `generator.py` to derive a richer template context. The repository includes `src/pdv_escpos/template.schema.json`; add `# yaml-language-server: $schema=../../template.schema.json` as the first manifest line to enable editor validation from a standard module directory.
 
-Template variables are escaped by Jinja2. The bundled demo template receives:
+A minimal declarative manifest looks like:
 
-- `title`;
-- `subtitle`;
-- `message`;
-- `status`;
-- `reference`;
-- `footer`;
-- repeatable `items`;
-- `receipt_width`.
+```yaml
+schema_version: 1
+name: message
+description: Print a local message.
+template: template.html.j2
+stylesheet: style.css
 
-Remote HTTP and HTTPS requests are blocked during rendering. Keep fonts, images and other assets local or embed them as data URLs.
+options:
+  - name: message
+    flags: [--message, -m]
+    type: string
+    required: true
+    help: Message to print.
+```
+
+The supported option types are `string`, `integer`, `number`, `boolean` and `path`. Option declarations can also use:
+
+- `default`;
+- `required`;
+- `repeatable`;
+- `minimum` and `maximum` for numeric ranges;
+- `choices`;
+- one or more `flags`;
+- `help`.
+
+The names `output`, `config`, `width`, `dither`, `threshold`, `vendor_id`, `product_id` and `cut` are reserved by the core actions and cannot be declared as module options.
+
+For generated modules, declare:
+
+```yaml
+generator: generator.py
+```
+
+The file must expose:
+
+```python
+def build_context(options):
+    return {"value_for_jinja": options["input_value"]}
+```
+
+`options` contains values already parsed and range-checked from the manifest. `build_context()` may perform cross-field validation and must return a string-keyed mapping for Jinja2.
+
+A module can declare one embedded local font:
+
+```yaml
+font:
+  file: assets/font.otf
+  family: ReceiptPixel
+  format: opentype
+```
+
+Supported font formats are `truetype`, `opentype` and `woff2`. The renderer embeds the font as a data URL, so printing remains offline.
+
+The root printable element must have `id="receipt"`. Playwright captures that element at a device scale factor of 1, so one CSS pixel corresponds to one printer dot. The renderer also injects `receipt_width` and `stylesheet` into the Jinja2 context.
+
+Remote HTTP and HTTPS requests are blocked during rendering. Keep fonts, images and other assets inside the module. Because `generator.py` is imported and executed as local Python code, only use trusted local modules.
+
+The bundled `demo` module is declarative and receives `title`, `subtitle`, `message`, `status`, `reference`, `footer` and repeatable `items` directly from its manifest options.
 
 ### `intelligences`: synthetic constellation readout
 
 The `intelligences` template was created for the art installation _Tracciare Costellazioni di Significato: INTELLIGENZE_. It renders participant responses as a fictional deep-space scientific readout. Its coordinates and measurements are synthetic and must not be interpreted as astronomical data.
 
-Its old-style receipt typography uses the locally bundled VT323 bitmap typeface. The renderer embeds the font directly in the generated HTML, so previews and prints remain fully offline and consistent across machines. VT323 is distributed under the SIL Open Font License 1.1; the licence text is stored in `src/pdv_escpos/templates/intelligences/assets/OFL.txt`.
+Its old-style receipt typography uses the locally bundled Departure Mono pixel typeface. The renderer embeds the font declared by `template.yaml` directly in the generated HTML, so previews and prints remain fully offline and consistent across machines. Departure Mono is distributed under the SIL Open Font License 1.1; the licence text is stored in `src/pdv_escpos/templates/intelligences/assets/LICENSE`.
 
 The template prints:
 
@@ -238,8 +308,7 @@ The template prints:
 Generate five fictional readings and a PNG preview:
 
 ```shell
-uv run pdv-escpos render \
-  --template intelligences \
+uv run pdv-escpos intelligences render \
   --questions 5 \
   --seed "SESSION-004271" \
   --output output/intelligences-004271.png
@@ -250,8 +319,7 @@ Without `--response`, the generator creates one value for each question. If `--q
 Pass actual response values by repeating `--response`:
 
 ```shell
-uv run pdv-escpos render \
-  --template intelligences \
+uv run pdv-escpos intelligences render \
   --response 72 \
   --response 41 \
   --response 88 \
@@ -266,8 +334,7 @@ Response values must be between `0` and `100`. When responses are supplied, the 
 Coordinates are normally generated from the seed. Override all three coordinate fields with one slash-separated value:
 
 ```shell
-uv run pdv-escpos render \
-  --template intelligences \
+uv run pdv-escpos intelligences render \
   --questions 5 \
   --coordinates "17H 42M 11.8S / +28D 09M 44S / Z+017.62" \
   --output output/intelligences-coordinates.png
@@ -276,8 +343,7 @@ uv run pdv-escpos render \
 Alternatively, override individual fields:
 
 ```shell
-uv run pdv-escpos render \
-  --template intelligences \
+uv run pdv-escpos intelligences render \
   --questions 5 \
   --ra "17H 42M 11.8S" \
   --dec "+28D 09M 44S" \
@@ -289,8 +355,7 @@ Do not combine `--coordinates` with `--ra`, `--dec` or `--depth`. The synthetic 
 Build an offline ESC/POS job without opening the USB device:
 
 ```shell
-uv run pdv-escpos build \
-  --template intelligences \
+uv run pdv-escpos intelligences build \
   --questions 5 \
   --seed "SESSION-004271" \
   --output output/intelligences-004271.bin
@@ -299,8 +364,7 @@ uv run pdv-escpos build \
 Print directly to the configured USB printer, with the cutter explicitly disabled:
 
 ```shell
-uv run pdv-escpos print \
-  --template intelligences \
+uv run pdv-escpos intelligences print \
   --response 72 \
   --response 41 \
   --response 88 \
@@ -310,11 +374,11 @@ uv run pdv-escpos print \
   --no-cut
 ```
 
-The content generator is implemented separately from the Jinja2 template in `src/pdv_escpos/intelligences.py`. This keeps response processing and deterministic data generation independent from the printable HTML/CSS presentation.
+The module options are declared in `src/pdv_escpos/templates/intelligences/template.yaml`. Its content generator is implemented next to the Jinja2 template in `src/pdv_escpos/templates/intelligences/generator.py`, keeping response processing and deterministic data generation independent from the printable HTML/CSS presentation.
 
 #### How the ASCII constellation changes
 
-The constellation is deterministic rather than independently random. Its geometry is calculated in `_constellation()` inside `src/pdv_escpos/intelligences.py`:
+The constellation is deterministic rather than independently random. Its geometry is calculated in `_constellation()` inside `src/pdv_escpos/templates/intelligences/generator.py`:
 
 - each response produces one node;
 - the response value determines its horizontal position;
@@ -382,13 +446,12 @@ Use `style.css` to change sizes and spacing without changing content. Important 
 - `.sky` and `.sky pre` — constellation frame and character size;
 - `footer` and `.catalogue` — final metadata.
 
-The bundled VT323 typeface is loaded from `src/pdv_escpos/templates/intelligences/assets/font.ttf`. Keep that file in place to preserve the old-style pixel receipt appearance.
+The bundled Departure Mono typeface is loaded from `src/pdv_escpos/templates/intelligences/assets/DepartureMono.ttf`, as declared in `template.yaml`. Keep that file and the matching `font` manifest block in place to preserve the old-style pixel receipt appearance.
 
 After every manual change, render a preview before printing:
 
 ```shell
-uv run pdv-escpos render \
-  --template intelligences \
+uv run pdv-escpos intelligences render \
   --response 72 \
   --response 41 \
   --response 88 \

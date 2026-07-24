@@ -23,23 +23,32 @@ class ReceiptRenderer:
         )
 
     def render_html(
-        self, template_name: str, context: dict[str, Any], width: int
+        self,
+        template_name: str,
+        context: dict[str, Any],
+        width: int,
+        *,
+        html_file: str = "template.html.j2",
+        stylesheet_file: str = "style.css",
+        font_file: str | None = None,
+        font_family: str | None = None,
+        font_format: str | None = None,
     ) -> str:
         template_dir = self.template_root / template_name
         if not template_dir.is_dir():
             raise ValueError(f"Unknown template: {template_name}")
 
-        stylesheet = (template_dir / "style.css").read_text(encoding="utf-8")
-        font_path = template_dir / "assets" / "DepartureMono.ttf"
-        if font_path.is_file():
+        stylesheet = (template_dir / stylesheet_file).read_text(encoding="utf-8")
+        if font_file and font_family and font_format:
+            font_path = template_dir / font_file
             font_data = b64encode(font_path.read_bytes()).decode("ascii")
             stylesheet = (
-                '@font-face { font-family: "ReceiptPixel"; '
-                f'src: url("data:font/ttf;base64,{font_data}") format("truetype"); '
+                f'@font-face {{ font-family: "{font_family}"; '
+                f'src: url("data:font;base64,{font_data}") format("{font_format}"); '
                 "font-style: normal; font-weight: 400; font-display: block; }\n"
                 + stylesheet
             )
-        template = self.environment.get_template(f"{template_name}/template.html.j2")
+        template = self.environment.get_template(f"{template_name}/{html_file}")
         return template.render(**context, stylesheet=stylesheet, receipt_width=width)
 
     def html_to_image(self, html: str, width: int) -> Image.Image:
@@ -69,7 +78,25 @@ class ReceiptRenderer:
         return image
 
     def render(
-        self, template_name: str, context: dict[str, Any], config: RenderConfig
+        self,
+        template_name: str,
+        context: dict[str, Any],
+        config: RenderConfig,
+        *,
+        html_file: str = "template.html.j2",
+        stylesheet_file: str = "style.css",
+        font_file: str | None = None,
+        font_family: str | None = None,
+        font_format: str | None = None,
     ) -> Image.Image:
-        html = self.render_html(template_name, context, config.width)
+        html = self.render_html(
+            template_name,
+            context,
+            config.width,
+            html_file=html_file,
+            stylesheet_file=stylesheet_file,
+            font_file=font_file,
+            font_family=font_family,
+            font_format=font_format,
+        )
         return self.html_to_image(html, config.width)

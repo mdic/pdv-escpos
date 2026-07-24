@@ -4,9 +4,10 @@ import hashlib
 import math
 import random
 import statistics
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 from datetime import datetime
+from itertools import pairwise
 
 _METRICS = (
     "COGNITIVE DRIFT",
@@ -108,7 +109,7 @@ def _constellation(
     for point_index, (x, y) in enumerate(points):
         field[y][x] = "+" if point_index == len(points) - 1 else "*"
 
-    for (x1, y1), (x2, y2) in zip(points, points[1:], strict=False):
+    for (x1, y1), (x2, y2) in pairwise(points):
         steps = max(abs(x2 - x1), abs(y2 - y1))
         if steps < 2:
             continue
@@ -220,3 +221,16 @@ def build_observation(
         "catalogue_id": catalogue_id,
         "seed": effective_seed,
     }
+
+
+def build_context(options: Mapping[str, object]) -> dict[str, object]:
+    """Build the Jinja2 context from values parsed from template.yaml."""
+    return build_observation(
+        questions=options.get("questions"),  # type: ignore[arg-type]
+        responses=options.get("response"),  # type: ignore[arg-type]
+        seed=options.get("seed"),  # type: ignore[arg-type]
+        coordinates=options.get("coordinates"),  # type: ignore[arg-type]
+        ra=options.get("ra"),  # type: ignore[arg-type]
+        dec=options.get("dec"),  # type: ignore[arg-type]
+        depth=options.get("depth"),  # type: ignore[arg-type]
+    )

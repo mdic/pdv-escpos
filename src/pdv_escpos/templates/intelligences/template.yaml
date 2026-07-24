@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=../../template.schema.json
+schema_version: 1
+name: intelligences
+description: Synthetic constellation readout for the INTELLIGENZE installation.
+template: template.html.j2
+stylesheet: style.css
+generator: generator.py
+font:
+  file: assets/DepartureMono.ttf
+  family: ReceiptPixel
+  format: truetype
+
+options:
+  - name: questions
+    flags: [--questions, -q]
+    type: integer
+    minimum: 1
+    maximum: 99
+    help: Number of synthetic response readings. Defaults to five when omitted.
+
+  - name: response
+    flags: [--response, -r]
+    type: number
+    repeatable: true
+    minimum: 0
+    maximum: 100
+    help: Response value from 0 to 100. Repeat once per answer.
+
+  - name: seed
+    flags: [--seed]
+    type: string
+    help: Seed used to reproduce generated observation data.
+
+  - name: coordinates
+    flags: [--coordinates]
+    type: string
+    help: Combined RA / DEC / depth coordinate override.
+
+  - name: ra
+    flags: [--ra]
+    type: string
+    help: RA-SYN coordinate override.
+
+  - name: dec
+    flags: [--dec]
+    type: string
+    help: DEC-SYN coordinate override.
+
+  - name: depth
+    flags: [--depth]
+    type: string
+    help: Depth-vector override.

@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=../../template.schema.json
+schema_version: 1
+name: demo
+description: General-purpose HTML/CSS thermal receipt demonstration.
+template: template.html.j2
+stylesheet: style.css
+
+options:
+  - name: title
+    flags: [--title]
+    type: string
+    default: Thermal dispatch
+    help: Main receipt title.
+
+  - name: subtitle
+    flags: [--subtitle]
+    type: string
+    default: HTML/CSS rendering prototype
+    help: Secondary heading.
+
+  - name: message
+    flags: [--message]
+    type: string
+    default: The rendering pipeline is operational.
+    help: Main receipt copy.
+
+  - name: status
+    flags: [--status]
+    type: string
+    default: READY
+    help: Short status label.
+
+  - name: reference
+    flags: [--reference]
+    type: string
+    default: PDV-001
+    help: Document reference.
+
+  - name: footer
+    flags: [--footer]
+    type: string
+    default: End of transmission
+    help: Footer copy.
+
+  - name: items
+    flags: [--item]
+    type: string
+    repeatable: true
+    help: Receipt list item. Repeat for multiple items.
