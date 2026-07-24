@@ -30,7 +30,7 @@ class ReceiptRenderer:
             raise ValueError(f"Unknown template: {template_name}")
 
         stylesheet = (template_dir / "style.css").read_text(encoding="utf-8")
-        font_path = template_dir / "assets" / "font.ttf"
+        font_path = template_dir / "assets" / "DepartureMono.ttf"
         if font_path.is_file():
             font_data = b64encode(font_path.read_bytes()).decode("ascii")
             stylesheet = (

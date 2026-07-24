@@ -211,7 +211,7 @@ def build_observation(
     catalogue_id = f"INT-{observation_id}-{observation_coordinates.origin}"
     return {
         "observation_id": observation_id,
-        "timestamp": timestamp.strftime("%Y-%m-%d %H:%M:%S %z"),
+        "timestamp": timestamp.strftime("%Y-%m-%d %H:%M:%S"),
         "question_count": question_count,
         "coordinates": asdict(observation_coordinates),
         "readings": [asdict(reading) for reading in readings],

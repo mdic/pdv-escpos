@@ -21,7 +21,7 @@ header { text-align: center; }
   border-bottom: 2px solid #000;
   font-size: 16px;
   font-weight: 400;
-  letter-spacing: .01em;
+  letter-spacing: 0em;
   white-space: nowrap;
 }
 .installation {
@@ -88,7 +88,7 @@ h2 {
 .sky pre {
   width: 100%;
   margin: 0;
-  font: 18px/1 "ReceiptPixel", "Liberation Mono", "Courier New", monospace;
+  font: 14px/1 "ReceiptPixel", "Liberation Mono", "Courier New", monospace;
   letter-spacing: 0;
   white-space: pre;
 }
@@ -96,6 +96,8 @@ h2 {
 footer { margin-top: 24px; border-top: 3px solid #000; text-align: center; }
 .catalogue { margin-top: 12px; padding: 8px; border: 2px solid #000; font-size: 16px; }
 .catalogue strong { display: block; margin-top: 4px; font-size: 23px; font-weight: 400; overflow-wrap: anywhere; }
+.thanks { margin-top: 12px; padding: 8px; border: 2px dotted #000; font-size: 16px; }
+.thanks strong { display: block; margin-top: 4px; font-size: 23px; font-weight: 400; overflow-wrap: anywhere; }
 footer p { margin: 12px 0 0; font-size: 18px; }
 footer .disclaimer { font-size: 14px; }
 .end-mark { margin-top: 18px; font-size: 16px; }
