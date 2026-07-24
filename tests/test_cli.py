@@ -44,6 +44,29 @@ def test_templates_command_reports_generator_type() -> None:
     assert "generator" in result.output
 
 
+def test_new_command_bootstraps_an_auto_discovered_module(tmp_path: Path) -> None:
+    runner = CliRunner()
+    initial_app = create_app(tmp_path)
+
+    created = runner.invoke(
+        initial_app,
+        [
+            "new",
+            "star-log",
+            "--description",
+            "Generated from the CLI.",
+            "--with-generator",
+        ],
+    )
+    discovered_app = create_app(tmp_path)
+    module_help = runner.invoke(discovered_app, ["star-log", "render", "--help"])
+
+    assert created.exit_code == 0, created.output
+    assert "Created template module" in created.output
+    assert module_help.exit_code == 0
+    assert "--message" in module_help.output
+
+
 def test_modular_render_writes_preview(tmp_path: Path) -> None:
     runner = CliRunner()
     app = create_app(TEMPLATE_ROOT)

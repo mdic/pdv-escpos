@@ -21,6 +21,7 @@ from .renderer import ReceiptRenderer
 from .template_module import (
     ManifestError,
     TemplateModule,
+    create_template_skeleton,
     discover_template_modules,
 )
 
@@ -225,6 +226,39 @@ def _module_group(module: TemplateModule) -> click.Group:
     return group
 
 
+def _new_command(template_root: Path) -> click.Command:
+    def callback(name: str, description: str | None, with_generator: bool) -> None:
+        try:
+            destination = create_template_skeleton(
+                template_root,
+                name,
+                description=description,
+                with_generator=with_generator,
+            )
+        except (ManifestError, OSError) as error:
+            raise click.ClickException(str(error)) from error
+        click.secho(f"Created template module: {destination}", fg="green")
+        click.echo(f"Inspect it with: pdv-escpos {name} render --help")
+
+    return click.Command(
+        name="new",
+        callback=callback,
+        params=[
+            click.Argument(["name"]),
+            click.Option(
+                ["--description", "-d"],
+                help="Description shown in root and module help.",
+            ),
+            click.Option(
+                ["--with-generator"],
+                is_flag=True,
+                help="Include a minimal generator.py build_context() hook.",
+            ),
+        ],
+        help="Create a local template-module skeleton.",
+    )
+
+
 def _templates_command(modules: list[TemplateModule]) -> click.Command:
     def callback() -> None:
         if not modules:
@@ -282,6 +316,7 @@ def create_app(template_root: Path = TEMPLATE_ROOT) -> click.Group:
     )
     for module in modules:
         root.add_command(_module_group(module))
+    root.add_command(_new_command(template_root))
     root.add_command(_templates_command(modules))
     root.add_command(
         click.Command(
