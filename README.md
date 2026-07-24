@@ -290,6 +290,217 @@ Remote HTTP and HTTPS requests are blocked during rendering. Keep fonts, images 
 
 The bundled `demo` module is declarative and receives `title`, `subtitle`, `message`, `status`, `reference`, `footer` and repeatable `items` directly from its manifest options.
 
+### Practical guide: create a new module
+
+#### 1. Generate the skeleton
+
+Choose a lowercase name containing letters, numbers and hyphens, then run:
+
+```shell
+uv run pdv-escpos new event-note \
+  --description "Print a short note for a local event."
+```
+
+The command creates:
+
+```text
+src/pdv_escpos/templates/event-note/
+├── template.yaml
+├── template.html.j2
+├── style.css
+└── assets/
+    └── README.md
+```
+
+It never overwrites an existing directory. `new`, `templates` and `usb-info` are reserved module names.
+
+The new module is discovered on the next CLI invocation. Confirm it with:
+
+```shell
+uv run pdv-escpos templates
+uv run pdv-escpos event-note render --help
+```
+
+The generated skeleton already accepts `--message` and can be rendered immediately:
+
+```shell
+uv run pdv-escpos event-note render \
+  --message "First local template" \
+  --output output/event-note.png
+```
+
+#### 2. Configure content options in `template.yaml`
+
+Edit `src/pdv_escpos/templates/event-note/template.yaml`. For example, replace or extend the generated `options` list:
+
+```yaml
+options:
+  - name: participant
+    flags: [--participant, -p]
+    type: string
+    required: true
+    help: Name or identifier printed on the receipt.
+
+  - name: score
+    flags: [--score]
+    type: integer
+    minimum: 0
+    maximum: 100
+    default: 50
+    help: Numeric score from 0 to 100.
+
+  - name: tag
+    flags: [--tag]
+    type: string
+    repeatable: true
+    help: Optional tag. Repeat for multiple tags.
+```
+
+The most useful option fields are:
+
+| Field                 | Purpose                                     | Example                                          |
+| --------------------- | ------------------------------------------- | ------------------------------------------------ |
+| `name`                | Python/Jinja2 variable name in `snake_case` | `participant_id`                                 |
+| `flags`               | CLI spellings                               | `[--participant, -p]`                            |
+| `type`                | Parsed value type                           | `string`, `integer`, `number`, `boolean`, `path` |
+| `help`                | Text shown by `--help`                      | `Participant identifier.`                        |
+| `default`             | Value used when omitted                     | `50`                                             |
+| `required`            | Reject the command when omitted             | `true`                                           |
+| `repeatable`          | Allow the flag more than once               | `true`                                           |
+| `minimum` / `maximum` | Numeric bounds                              | `0` / `100`                                      |
+| `choices`             | Restrict accepted values                    | `[low, medium, high]`                            |
+
+After saving the manifest, inspect the generated interface rather than guessing its options:
+
+```shell
+uv run pdv-escpos event-note render --help
+```
+
+#### 3. Use the options in HTML
+
+A declarative module passes each parsed option directly to Jinja2. In `template.html.j2`, use the option names as variables:
+
+```jinja2
+<h1>{{ participant }}</h1>
+<p>SCORE: {{ score }}</p>
+
+{% if tag %}
+<ul>
+  {% for value in tag %}
+  <li>{{ value }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+```
+
+Keep exactly one printable root element:
+
+```html
+<article id="receipt" class="receipt">
+  ...
+</article>
+```
+
+Keep `<style>{{ stylesheet | safe }}</style>` in the document head. The renderer supplies `receipt_width` automatically, so it can also be used in the viewport declaration or template body.
+
+#### 4. Edit the appearance
+
+Use `style.css` for typography, spacing, borders and receipt layout. The printable width is fixed by the render configuration, normally `384` dots for the current printer. Prefer monochrome, high-contrast styling and avoid large solid black areas.
+
+Put local images, fonts and their licence files in `assets/`. To use a font, add a manifest block matching its actual format:
+
+```yaml
+font:
+  file: assets/MyFont.otf
+  family: ReceiptPixel
+  format: opentype
+```
+
+Then reference the declared family in CSS:
+
+```css
+body {
+  font-family: "ReceiptPixel", monospace;
+}
+```
+
+Use `format: truetype` for TTF files and `format: woff2` for WOFF2 files. The renderer embeds the declared font; no network request is made.
+
+#### 5. Add a generator when YAML and Jinja2 are not enough
+
+Create a generated skeleton with:
+
+```shell
+uv run pdv-escpos new survey-result \
+  --description "Generate a derived survey receipt." \
+  --with-generator
+```
+
+This adds `generator.py` and declares it in the manifest:
+
+```yaml
+generator: generator.py
+```
+
+The generated hook receives all module options after Click has parsed their basic types and ranges:
+
+```python
+def build_context(options):
+    return {
+        "display_value": options["input_value"],
+        "derived_value": "calculate it here",
+    }
+```
+
+The returned keys, not the original option names, become the Jinja2 variables. Use a generator for derived values, random or seeded content, cross-option validation, lookups and structures such as lists of rows. Raise `ValueError` with a clear message for invalid option combinations; the CLI will display it as a normal command error.
+
+A generator is optional. Do not add one when the template only needs to print values exactly as supplied by the operator.
+
+#### 6. Preview, build and print
+
+Always start with a PNG preview:
+
+```shell
+uv run pdv-escpos event-note render \
+  --participant "P-0042" \
+  --score 72 \
+  --tag alpha \
+  --tag archive \
+  --output output/event-note.png
+```
+
+Build raw ESC/POS bytes without opening the printer:
+
+```shell
+uv run pdv-escpos event-note build \
+  --participant "P-0042" \
+  --score 72 \
+  --output output/event-note.bin
+```
+
+Print only after the preview is correct:
+
+```shell
+uv run pdv-escpos event-note print \
+  --participant "P-0042" \
+  --score 72 \
+  --no-cut
+```
+
+`--output` belongs only to `render` and `build`; remove it when changing an example to `print`.
+
+#### Manual creation without the bootstrap command
+
+You can create a module manually by adding a directory containing at least:
+
+```text
+template.yaml
+style.css
+template.html.j2
+```
+
+Copy the YAML language-server comment from another module, ensure `schema_version: 1` is present, and run `uv run pdv-escpos templates`. If discovery fails, check that all files declared in the manifest exist and that module and option names do not conflict with reserved core names.
+
 ### `intelligences`: synthetic constellation readout
 
 The `intelligences` template was created for the art installation _Tracciare Costellazioni di Significato: INTELLIGENZE_. It renders participant responses as a fictional deep-space scientific readout. Its coordinates and measurements are synthetic and must not be interpreted as astronomical data.

@@ -2,7 +2,11 @@ from pathlib import Path
 
 import pytest
 
-from pdv_escpos.template_module import ManifestError, discover_template_modules
+from pdv_escpos.template_module import (
+    ManifestError,
+    create_template_skeleton,
+    discover_template_modules,
+)
 
 
 def _write_minimal_template(directory: Path, manifest: str) -> None:
@@ -34,6 +38,34 @@ options:
     assert [module.name for module in modules] == ["message"]
     assert modules[0].generator_file is None
     assert modules[0].options[0].flags == ("--message",)
+
+
+def test_skeleton_creates_a_valid_generated_module(tmp_path: Path) -> None:
+    destination = create_template_skeleton(
+        tmp_path,
+        "star-log",
+        description="A generated star log.",
+        with_generator=True,
+    )
+
+    modules = discover_template_modules(tmp_path)
+
+    assert destination == tmp_path / "star-log"
+    assert (destination / "template.yaml").is_file()
+    assert (destination / "template.html.j2").is_file()
+    assert (destination / "style.css").is_file()
+    assert (destination / "generator.py").is_file()
+    assert (destination / "assets" / "README.md").is_file()
+    assert [module.name for module in modules] == ["star-log"]
+    assert modules[0].generator_file == "generator.py"
+    assert modules[0].build_context({"message": "Hello"}) == {"message": "Hello"}
+
+
+def test_skeleton_never_overwrites_an_existing_directory(tmp_path: Path) -> None:
+    create_template_skeleton(tmp_path, "message")
+
+    with pytest.raises(ManifestError, match="already exists"):
+        create_template_skeleton(tmp_path, "message")
 
 
 def test_manifest_rejects_reserved_module_option(tmp_path: Path) -> None:

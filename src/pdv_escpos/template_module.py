@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import re
 import sys
 from collections.abc import Mapping, Sequence
@@ -24,6 +25,7 @@ _RESERVED_OPTION_NAMES = {
     "width",
 }
 _NAME_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
+_RESERVED_MODULE_NAMES = {"new", "templates", "usb-info"}
 
 
 class ManifestError(ValueError):
@@ -224,6 +226,8 @@ def load_template_module(directory: Path) -> TemplateModule:
     name = _string(data.get("name"), "name")
     if not re.fullmatch(r"[a-z][a-z0-9-]*", name):
         raise ManifestError("name must use lowercase letters, numbers and hyphens")
+    if name in _RESERVED_MODULE_NAMES:
+        raise ManifestError(f"module name '{name}' is reserved by the core CLI")
     description = _string(data.get("description"), "description")
     html_file = _string(data.get("template", "template.html.j2"), "template")
     stylesheet_file = _string(data.get("stylesheet", "style.css"), "stylesheet")
@@ -274,6 +278,99 @@ def load_template_module(directory: Path) -> TemplateModule:
         font_format=font_format,
         options=options,
     )
+
+
+def create_template_skeleton(
+    template_root: Path,
+    name: str,
+    *,
+    description: str | None = None,
+    with_generator: bool = False,
+) -> Path:
+    if not re.fullmatch(r"[a-z][a-z0-9-]*", name):
+        raise ManifestError(
+            "template name must use lowercase letters, numbers and hyphens"
+        )
+    if name in _RESERVED_MODULE_NAMES:
+        raise ManifestError(f"template name '{name}' is reserved by the core CLI")
+
+    destination = template_root / name
+    if destination.exists():
+        raise ManifestError(f"template directory already exists: {destination}")
+
+    destination.mkdir(parents=True)
+    (destination / "assets").mkdir()
+    schema_comment = (
+        "# yaml-language-server: $schema=../../template.schema.json\n"
+        if (template_root.parent / "template.schema.json").is_file()
+        else ""
+    )
+    generator_declaration = "generator: generator.py\n" if with_generator else ""
+    manifest_description = description or f"Local {name} receipt template."
+    escaped_description = json.dumps(manifest_description, ensure_ascii=False)
+    manifest = (
+        f"{schema_comment}"
+        "schema_version: 1\n"
+        f"name: {name}\n"
+        f"description: {escaped_description}\n"
+        "template: template.html.j2\n"
+        "stylesheet: style.css\n"
+        f"{generator_declaration}\n"
+        "options:\n"
+        "  - name: message\n"
+        "    flags: [--message, -m]\n"
+        "    type: string\n"
+        "    default: Hello from a local template.\n"
+        "    help: Message printed by this template.\n"
+    )
+    (destination / "template.yaml").write_text(manifest, encoding="utf-8")
+    (destination / "template.html.j2").write_text(
+        """<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width={{ receipt_width }}, initial-scale=1" />
+    <style>{{ stylesheet | safe }}</style>
+  </head>
+  <body>
+    <article id="receipt" class="receipt">
+      <h1>LOCAL READOUT</h1>
+      <p>{{ message }}</p>
+    </article>
+  </body>
+</html>
+""",
+        encoding="utf-8",
+    )
+    (destination / "style.css").write_text(
+        """* { box-sizing: border-box; }
+html, body { margin: 0; background: #fff; color: #000; }
+body { font-family: monospace; }
+.receipt { width: 100%; padding: 12px 10px 24px; font-size: 18px; }
+h1 { margin: 0 0 16px; border-bottom: 2px solid #000; font-size: 28px; }
+p { margin: 0; overflow-wrap: anywhere; }
+""",
+        encoding="utf-8",
+    )
+    (destination / "assets" / "README.md").write_text(
+        "Place local fonts, images and licence files in this directory.\n",
+        encoding="utf-8",
+    )
+    if with_generator:
+        (destination / "generator.py").write_text(
+            """from __future__ import annotations
+
+from collections.abc import Mapping
+
+
+def build_context(options: Mapping[str, object]) -> dict[str, object]:
+    return {"message": str(options.get("message") or "")}
+""",
+            encoding="utf-8",
+        )
+
+    _ = load_template_module(destination)
+    return destination
 
 
 def discover_template_modules(template_root: Path) -> list[TemplateModule]:
