@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://pdv-escpos.local/template.schema.json",
+
   "title": "pdv-escpos template module",
   "type": "object",
   "additionalProperties": false,
@@ -15,19 +15,27 @@
     "template": { "type": "string", "default": "template.html.j2" },
     "stylesheet": { "type": "string", "default": "style.css" },
     "generator": { "type": "string" },
-    "font": {
+    "render": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["file"],
       "properties": {
-        "file": { "type": "string" },
-        "family": { "type": "string", "default": "ReceiptPixel" },
-        "format": {
+        "orientation": {
           "type": "string",
-          "enum": ["truetype", "opentype", "woff2"],
-          "default": "truetype"
+          "enum": ["portrait", "landscape"],
+          "default": "portrait"
+        },
+        "canvas_length": { "type": "integer", "minimum": 384 },
+        "canvas_length_from": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
         }
       }
+    },
+    "font": { "$ref": "#/definitions/font" },
+    "fonts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/font" }
     },
     "options": {
       "type": "array",
@@ -36,6 +44,25 @@
     }
   },
   "definitions": {
+    "font": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file"],
+      "properties": {
+        "file": { "type": "string" },
+        "family": { "type": "string" },
+        "format": {
+          "type": "string",
+          "enum": ["truetype", "opentype", "woff", "woff2"]
+        },
+        "weight": { "type": ["string", "integer"] },
+        "style": {
+          "type": "string",
+          "enum": ["normal", "italic", "oblique"],
+          "default": "normal"
+        }
+      }
+    },
     "option": {
       "type": "object",
       "additionalProperties": false,

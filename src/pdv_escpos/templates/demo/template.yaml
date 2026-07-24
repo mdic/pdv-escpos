@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=../../template.schema.json
+# yaml-language-server: $schema=../../template-module-v1.schema.json
 schema_version: 1
 name: demo
 description: General-purpose HTML/CSS thermal receipt demonstration.

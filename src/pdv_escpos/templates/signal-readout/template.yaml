@@ -1,0 +1,109 @@
+# yaml-language-server: $schema=../../template-module-v1.schema.json
+schema_version: 1
+name: signal-readout
+description: Landscape multi-channel waveform readout from files, STDIN or synthetic presets.
+template: template.html.j2
+stylesheet: style.css
+generator: generator.py
+fonts:
+  - file: assets/DepartureMono-Regular.otf
+    family: ReceiptPixel
+render:
+  orientation: landscape
+  canvas_length: 1200
+  canvas_length_from: canvas_length
+
+options:
+  - name: source
+    flags: [--source, -s]
+    type: path
+    help: Input CSV, JSON or text file.
+
+  - name: stdin
+    flags: [--stdin]
+    type: boolean
+    help: Read a complete sample from standard input.
+
+  - name: format
+    flags: [--format, -f]
+    type: string
+    choices: [auto, csv, json, text]
+    default: auto
+    help: Input format. Auto uses the extension or content.
+
+  - name: column
+    flags: [--column, -C]
+    type: string
+    repeatable: true
+    help: CSV column name or zero-based index. Repeat for multiple channels.
+
+  - name: preset
+    flags: [--preset]
+    type: string
+    choices: [noise, eeg, ecg, seismic]
+    default: eeg
+    help: Synthetic waveform used when no external source is supplied.
+
+  - name: count
+    flags: [--count, -n]
+    type: integer
+    minimum: 16
+    maximum: 2000
+    default: 240
+    help: Number of synthetic decimal samples per channel.
+
+  - name: minimum
+    flags: [--minimum]
+    type: number
+    default: -1.0
+    help: Minimum value for synthetic data.
+
+  - name: maximum
+    flags: [--maximum]
+    type: number
+    default: 1.0
+    help: Maximum value for synthetic data.
+
+  - name: channels
+    flags: [--channels]
+    type: integer
+    minimum: 1
+    maximum: 6
+    default: 1
+    help: Number of synthetic channels.
+
+  - name: layout
+    flags: [--layout]
+    type: string
+    choices: [auto, separate, overlay]
+    default: auto
+    help: Draw channels separately or on the same axes.
+
+  - name: sample_rate
+    flags: [--sample-rate]
+    type: number
+    minimum: 0.001
+    default: 100.0
+    help: Sampling frequency in hertz for printed metadata.
+
+  - name: units
+    flags: [--units]
+    type: string
+    default: a.u.
+    help: Unit label printed with channel statistics.
+
+  - name: seed
+    flags: [--seed]
+    type: string
+    help: Seed used to reproduce synthetic waveforms.
+
+  - name: title
+    flags: [--title]
+    type: string
+    default: MULTI-CHANNEL SIGNAL ARRAY
+    help: Main readout title.
+
+  - name: reference
+    flags: [--reference]
+    type: string
+    help: Optional observation reference override.

@@ -227,7 +227,7 @@ src/pdv_escpos/templates/example/
     └── licence.txt
 ```
 
-`template.yaml` is required. HTML, stylesheet and generator filenames are declared by the manifest. The generator is optional: a declarative module passes parsed option values directly to Jinja2, while a generated module uses `generator.py` to derive a richer template context. The repository includes `src/pdv_escpos/template.schema.json`; add `# yaml-language-server: $schema=../../template.schema.json` as the first manifest line to enable editor validation from a standard module directory.
+`template.yaml` is required. HTML, stylesheet and generator filenames are declared by the manifest. The generator is optional: a declarative module passes parsed option values directly to Jinja2, while a generated module uses `generator.py` to derive a richer template context. The repository includes `src/pdv_escpos/template-module-v1.schema.json`; add `# yaml-language-server: $schema=../../template-module-v1.schema.json` as the first manifest line to enable editor validation from a standard module directory.
 
 A minimal declarative manifest looks like:
 
@@ -273,16 +273,37 @@ def build_context(options):
 
 `options` contains values already parsed and range-checked from the manifest. `build_context()` may perform cross-field validation and must return a string-keyed mapping for Jinja2.
 
-A module can declare one embedded local font:
+A module is portrait by default. To render along the paper axis and rotate into a printer-ready bitmap, declare a fixed landscape length:
 
 ```yaml
-font:
-  file: assets/font.otf
-  family: ReceiptPixel
-  format: opentype
+render:
+  orientation: landscape
+  canvas_length: 1200
 ```
 
-Supported font formats are `truetype`, `opentype` and `woff2`. The renderer embeds the font as a data URL, so printing remains offline.
+A generator can instead control paper length by returning an integer context value:
+
+```yaml
+render:
+  orientation: landscape
+  canvas_length: 1200
+  canvas_length_from: canvas_length
+```
+
+`canvas_length` is the fallback. When the generator returns `canvas_length`, that value is used for the current job. A landscape template must make `#receipt` exactly `receipt_width` pixels high and use `canvas_width` for its width.
+
+Declare one or more local fonts with `fonts`:
+
+```yaml
+fonts:
+  - file: assets/Regular.otf
+    family: ReceiptText
+  - file: assets/Bold.woff2
+    family: ReceiptText
+    weight: 700
+```
+
+The format is inferred from `.ttf`, `.otf`, `.woff` or `.woff2`. An explicit `format` is only needed for an unknown extension. `family` defaults to the filename stem; `weight` defaults to `400` and `style` to `normal`. The legacy singular `font` block remains supported. Every declared font is embedded as a data URL, so rendering remains offline.
 
 The root printable element must have `id="receipt"`. Playwright captures that element at a device scale factor of 1, so one CSS pixel corresponds to one printer dot. The renderer also injects `receipt_width` and `stylesheet` into the Jinja2 context.
 
@@ -305,6 +326,7 @@ The command creates:
 
 ```text
 src/pdv_escpos/templates/event-note/
+├── README.md
 ├── template.yaml
 ├── template.html.j2
 ├── style.css
@@ -410,10 +432,9 @@ Use `style.css` for typography, spacing, borders and receipt layout. The printab
 Put local images, fonts and their licence files in `assets/`. To use a font, add a manifest block matching its actual format:
 
 ```yaml
-font:
-  file: assets/MyFont.otf
-  family: ReceiptPixel
-  format: opentype
+fonts:
+  - file: assets/MyFont.otf
+    family: ReceiptPixel
 ```
 
 Then reference the declared family in CSS:
@@ -424,7 +445,7 @@ body {
 }
 ```
 
-Use `format: truetype` for TTF files and `format: woff2` for WOFF2 files. The renderer embeds the declared font; no network request is made.
+The format is detected automatically from the extension. The renderer embeds every declared font; no network request is made.
 
 #### 5. Add a generator when YAML and Jinja2 are not enough
 
@@ -501,176 +522,16 @@ template.html.j2
 
 Copy the YAML language-server comment from another module, ensure `schema_version: 1` is present, and run `uv run pdv-escpos templates`. If discovery fails, check that all files declared in the manifest exist and that module and option names do not conflict with reserved core names.
 
-### `intelligences`: synthetic constellation readout
+### Bundled template documentation
 
-The `intelligences` template was created for the art installation _Tracciare Costellazioni di Significato: INTELLIGENZE_. It renders participant responses as a fictional deep-space scientific readout. Its coordinates and measurements are synthetic and must not be interpreted as astronomical data.
+Each bundled module keeps its operating instructions beside its manifest, generator and assets:
 
-Its old-style receipt typography uses the locally bundled Departure Mono pixel typeface. The renderer embeds the font declared by `template.yaml` directly in the generated HTML, so previews and prints remain fully offline and consistent across machines. Departure Mono is distributed under the SIL Open Font License 1.1; the licence text is stored in `src/pdv_escpos/templates/intelligences/assets/LICENSE`.
+- [`demo`](src/pdv_escpos/templates/demo/README.md)
+- [`intelligences`](src/pdv_escpos/templates/intelligences/README.md)
+- [`signal-readout`](src/pdv_escpos/templates/signal-readout/README.md)
+- [`testing`](src/pdv_escpos/templates/testing/README.md)
 
-The template prints:
-
-- an observation and catalogue identifier;
-- a timestamp and question count;
-- synthetic interpretative coordinates;
-- exactly one response-spectrum row per question;
-- derived resonance, coherence and semantic-magnitude values;
-- a generated ASCII constellation plot.
-
-Generate five fictional readings and a PNG preview:
-
-```shell
-uv run pdv-escpos intelligences render \
-  --questions 5 \
-  --seed "SESSION-004271" \
-  --output output/intelligences-004271.png
-```
-
-Without `--response`, the generator creates one value for each question. If `--questions` is omitted as well, it defaults to five readings. The seed determines the observation ID, coordinates, metrics, values and constellation, making those generated data reproducible; the printed timestamp records the current rendering time.
-
-Pass actual response values by repeating `--response`:
-
-```shell
-uv run pdv-escpos intelligences render \
-  --response 72 \
-  --response 41 \
-  --response 88 \
-  --response 63 \
-  --response 29 \
-  --seed "SESSION-004271" \
-  --output output/intelligences-responses.png
-```
-
-Response values must be between `0` and `100`. When responses are supplied, the question count is inferred from their number. `--questions` may also be supplied, but it must match the number of `--response` options.
-
-Coordinates are normally generated from the seed. Override all three coordinate fields with one slash-separated value:
-
-```shell
-uv run pdv-escpos intelligences render \
-  --questions 5 \
-  --coordinates "17H 42M 11.8S / +28D 09M 44S / Z+017.62" \
-  --output output/intelligences-coordinates.png
-```
-
-Alternatively, override individual fields:
-
-```shell
-uv run pdv-escpos intelligences render \
-  --questions 5 \
-  --ra "17H 42M 11.8S" \
-  --dec "+28D 09M 44S" \
-  --depth "Z+017.62"
-```
-
-Do not combine `--coordinates` with `--ra`, `--dec` or `--depth`. The synthetic signal origin remains generator-controlled so that the catalogue ID stays linked to the observation seed.
-
-Build an offline ESC/POS job without opening the USB device:
-
-```shell
-uv run pdv-escpos intelligences build \
-  --questions 5 \
-  --seed "SESSION-004271" \
-  --output output/intelligences-004271.bin
-```
-
-Print directly to the configured USB printer, with the cutter explicitly disabled:
-
-```shell
-uv run pdv-escpos intelligences print \
-  --response 72 \
-  --response 41 \
-  --response 88 \
-  --response 63 \
-  --response 29 \
-  --seed "SESSION-004271" \
-  --no-cut
-```
-
-The module options are declared in `src/pdv_escpos/templates/intelligences/template.yaml`. Its content generator is implemented next to the Jinja2 template in `src/pdv_escpos/templates/intelligences/generator.py`, keeping response processing and deterministic data generation independent from the printable HTML/CSS presentation.
-
-#### How the ASCII constellation changes
-
-The constellation is deterministic rather than independently random. Its geometry is calculated in `_constellation()` inside `src/pdv_escpos/templates/intelligences/generator.py`:
-
-- each response produces one node;
-- the response value determines its horizontal position;
-- the response index and value determine its vertical position;
-- consecutive nodes are joined with `.` characters;
-- nodes use `*`, while the final node uses `+`.
-
-Consequently, the same ordered response values always produce the same constellation, even if `--seed` changes. Different response values or a different response order produce a different shape.
-
-When only `--questions` is supplied, values are generated from the seed. A fixed seed therefore reproduces the same values and constellation. Without an explicit seed, the current timestamp is used as the seed, so each invocation normally generates a different set of values and a different constellation.
-
-#### Editing the `intelligences` template manually
-
-The printable structure is in:
-
-```text
-src/pdv_escpos/templates/intelligences/template.html.j2
-```
-
-Its presentation is in:
-
-```text
-src/pdv_escpos/templates/intelligences/style.css
-```
-
-The `.j2` file is ordinary HTML with Jinja2 expressions:
-
-- `{{ value }}` prints a generated value;
-- `{% for item in items %}` and `{% endfor %}` repeat a block;
-- fixed text can be edited directly as normal HTML.
-
-The template is divided into independent blocks:
-
-1. `<header>` — installation name and instrument label;
-2. `<section class="metadata ruled">` — observation ID, timestamp and question count;
-3. the section headed `INTERPRETATIVE COORDINATES`;
-4. the section headed `RESPONSE SPECTRUM`;
-5. the section headed `CONSTELLATION ANALYSIS`;
-6. `<footer>` — catalogue ID, status and disclaimer.
-
-To remove a complete section, delete its opening `<section ...>` tag, everything inside it, and its closing `</section>` tag. For example, removing the interpretative-coordinate section does not require any Python changes: the generator may continue to calculate coordinates, but unused values are simply not rendered.
-
-The constellation analysis section contains two parts. Delete only the `<dl class="values"> ... </dl>` block to hide the numerical analysis while retaining the star map. Delete only the `<figure class="star-map"> ... </figure>` block to hide the map while retaining the numerical analysis.
-
-The response spectrum contains a Jinja2 loop. If removing it, delete the entire section, including both `{% for reading in readings %}` and `{% endfor %}`. Leaving only one of those tags will make template rendering fail.
-
-The footer can be shortened by removing individual elements such as:
-
-```html
-<p class="disclaimer">SYNTHETIC COORDINATES / NON-ASTRONOMICAL DATA</p>
-```
-
-Keep these structural elements in the document:
-
-- `<style>{{ stylesheet | safe }}</style>`, which injects the local CSS and embedded font;
-- one and only one element with `id="receipt"`, which Playwright uses as the screenshot boundary;
-- balanced HTML and Jinja2 opening and closing tags.
-
-Use `style.css` to change sizes and spacing without changing content. Important selectors include:
-
-- `.receipt` — base type size, line height and outer padding;
-- `h1` — the `INTELLIGENZE` title;
-- `h2` — black section headings;
-- `.readings li` and `.signal` — response rows;
-- `.sky` and `.sky pre` — constellation frame and character size;
-- `footer` and `.catalogue` — final metadata.
-
-The bundled Departure Mono typeface is loaded from `src/pdv_escpos/templates/intelligences/assets/DepartureMono.ttf`, as declared in `template.yaml`. Keep that file and the matching `font` manifest block in place to preserve the old-style pixel receipt appearance.
-
-After every manual change, render a preview before printing:
-
-```shell
-uv run pdv-escpos intelligences render \
-  --response 72 \
-  --response 41 \
-  --response 88 \
-  --seed "LAYOUT-CHECK" \
-  --output output/intelligences-layout-check.png
-```
-
-No rebuild or application restart is required: HTML and CSS files are read again for every command. Once the PNG looks correct, replace the `render` command with `print`, remove `--output` and its path, and keep `--no-cut` unless cutter support has been verified. `print` does not create a PNG or binary output file.
+Keep module-specific commands, input formats and editing notes in that module README rather than in this general project README.
 
 ## Testing
 

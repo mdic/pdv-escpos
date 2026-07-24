@@ -1,0 +1,6 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #fff; color: #000; }
+body { font-family: monospace; }
+.receipt { width: 100%; padding: 12px 10px 24px; font-size: 18px; }
+h1 { margin: 0 0 16px; border-bottom: 2px solid #000; font-size: 28px; }
+p { margin: 0; overflow-wrap: anywhere; }

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width={{ canvas_width }}, initial-scale=1" />
+    <style>{{ stylesheet | safe }}</style>
+  </head>
+  <body>
+    <article
+      id="receipt"
+      class="receipt"
+      style="width: {{ canvas_width }}px; height: {{ receipt_width }}px"
+      aria-label="Landscape signal readout"
+    >
+      <header>
+        <div class="system-mark">XR-09 // SIGNAL CARTOGRAPHY UNIT</div>
+        <div class="title-block">
+          <h1>{{ title }}</h1>
+          <p>{{ mode }} ACQUISITION · {{ channel_count }} CHANNEL{% if channel_count != 1 %}S{% endif %} · {{ layout }}</p>
+        </div>
+        <div class="reference"><span>OBSERVATION</span><strong>{{ reference }}</strong></div>
+      </header>
+
+      <section class="telemetry">
+        <span>SOURCE <strong>{{ source }}</strong></span>
+        <span>FORMAT <strong>{{ data_format }}</strong></span>
+        <span>SAMPLES <strong>{{ sample_count }}</strong></span>
+        <span>RATE <strong>{{ sample_rate }} Hz</strong></span>
+        <span>DURATION <strong>{{ duration }} s</strong></span>
+        <span>UTC/LOCAL <strong>{{ timestamp }}</strong></span>
+      </section>
+
+      <section class="plot-shell">
+        <div class="plot-label">AMPLITUDE / {{ units }}</div>
+        <svg
+          class="plot"
+          viewBox="0 0 {{ plot_width }} {{ plot_height }}"
+          preserveAspectRatio="none"
+          role="img"
+          aria-label="Generated multi-channel waveform"
+        >
+          <g class="grid">
+            {% for x in grid_x %}
+            <line x1="{{ x }}" y1="0" x2="{{ x }}" y2="{{ plot_height }}" />
+            {% endfor %}
+            {% for y in [0, 55, 110, 165, 220] %}
+            <line x1="0" y1="{{ y }}" x2="{{ plot_width }}" y2="{{ y }}" />
+            {% endfor %}
+          </g>
+          {% for separator in separators %}
+          <line class="separator" x1="0" y1="{{ separator }}" x2="{{ plot_width }}" y2="{{ separator }}" />
+          {% endfor %}
+          {% for channel in channels %}
+          <path class="trace trace-{{ channel.index % 6 }}" d="{{ channel.path }}" />
+          <text class="channel-label" x="8" y="{{ channel.label_y }}">{{ channel.name }}</text>
+          {% endfor %}
+        </svg>
+        <div class="axis-row"><span>T+0.000</span><span>RELATIVE TIME AXIS</span><span>T+{{ duration }}</span></div>
+      </section>
+
+      <aside class="channel-stats">
+        {% for channel in channels %}
+        <div>
+          <strong>{{ channel.name }}</strong>
+          <span>MIN {{ channel.min }}</span>
+          <span>MAX {{ channel.max }}</span>
+          <span>AVG {{ channel.mean }}</span>
+          <span>RMS {{ channel.rms }}</span>
+        </div>
+        {% endfor %}
+      </aside>
+
+      <footer>
+        <div><span>GLOBAL RANGE</span><strong>{{ global_min }} → {{ global_max }} {{ units }}</strong></div>
+        <div><span>MEAN FIELD</span><strong>{{ global_mean }} {{ units }}</strong></div>
+        <div><span>ROTATION</span><strong>90 DEG / PAPER AXIS</strong></div>
+        <div class="status"><i></i><strong>TRACE CAPTURE COMPLETE</strong></div>
+        <p>SIMULATED PRESETS ARE VISUAL DATA ONLY · NOT A MEDICAL OR SCIENTIFIC MEASUREMENT</p>
+      </footer>
+    </article>
+  </body>
+</html>

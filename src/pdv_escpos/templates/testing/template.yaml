@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../template-module-v1.schema.json
+schema_version: 1
+name: testing
+description: "Local testing receipt template."
+template: template.html.j2
+stylesheet: style.css
+generator: generator.py
+
+options:
+  - name: message
+    flags: [--message, -m]
+    type: string
+    default: Hello from a local template.
+    help: Message printed by this template.

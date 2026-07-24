@@ -55,6 +55,7 @@ def test_skeleton_creates_a_valid_generated_module(tmp_path: Path) -> None:
     assert (destination / "template.html.j2").is_file()
     assert (destination / "style.css").is_file()
     assert (destination / "generator.py").is_file()
+    assert (destination / "README.md").is_file()
     assert (destination / "assets" / "README.md").is_file()
     assert [module.name for module in modules] == ["star-log"]
     assert modules[0].generator_file == "generator.py"
@@ -66,6 +67,32 @@ def test_skeleton_never_overwrites_an_existing_directory(tmp_path: Path) -> None
 
     with pytest.raises(ManifestError, match="already exists"):
         create_template_skeleton(tmp_path, "message")
+
+
+def test_manifest_infers_multiple_font_formats(tmp_path: Path) -> None:
+    directory = tmp_path / "fonts"
+    _write_minimal_template(
+        directory,
+        """
+schema_version: 1
+name: fonts
+description: Multiple local fonts.
+fonts:
+  - file: assets/Regular.otf
+    family: ReceiptText
+  - file: assets/Bold.woff2
+    family: ReceiptText
+    weight: 700
+""",
+    )
+    (directory / "assets").mkdir()
+    (directory / "assets" / "Regular.otf").write_bytes(b"font")
+    (directory / "assets" / "Bold.woff2").write_bytes(b"font")
+
+    module = discover_template_modules(tmp_path)[0]
+
+    assert [font.font_format for font in module.fonts] == ["opentype", "woff2"]
+    assert [font.weight for font in module.fonts] == ["400", "700"]
 
 
 def test_manifest_rejects_reserved_module_option(tmp_path: Path) -> None:

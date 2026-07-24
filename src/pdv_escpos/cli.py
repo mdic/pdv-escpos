@@ -127,15 +127,16 @@ def _render_image(
         dither=dither,
         threshold=threshold,
     )
+    canvas_length = module.resolve_canvas_length(context, config.render.width)
     rendered = ReceiptRenderer(module.directory.parent).render(
         module.directory.name,
         context,
         config.render,
         html_file=module.html_file,
         stylesheet_file=module.stylesheet_file,
-        font_file=module.font_file,
-        font_family=module.font_family,
-        font_format=module.font_format,
+        fonts=module.fonts,
+        orientation=module.orientation,
+        canvas_length=canvas_length,
     )
     return prepare_for_thermal_print(rendered, config.render), config
 
@@ -190,7 +191,7 @@ def _action_callback(module: TemplateModule, action: str):
                 _run_build(module, values)
             else:
                 _run_print(module, values)
-        except (ManifestError, ValueError) as error:
+        except (ManifestError, TypeError, ValueError) as error:
             raise click.ClickException(str(error)) from error
 
     return callback

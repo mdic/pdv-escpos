@@ -1,0 +1,113 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #fff; color: #000; }
+body { font-family: "ReceiptPixel", "Courier New", "Liberation Mono", monospace; }
+.receipt {
+  display: grid;
+  grid-template-rows: 62px 30px 1fr 50px 62px;
+  gap: 6px;
+  padding: 10px 12px;
+  overflow: hidden;
+  background: #fff;
+  border: 2px solid #000;
+  font-size: 13px;
+  line-height: 1;
+}
+header {
+  display: grid;
+  grid-template-columns: 250px 1fr 210px;
+  align-items: stretch;
+  border-bottom: 3px solid #000;
+}
+.system-mark {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 2px solid #000;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+.title-block { padding: 3px 18px 0; }
+h1 { margin: 0; font-size: 29px; line-height: .95; letter-spacing: .05em; }
+.title-block p { margin: 7px 0 0; font-size: 15px; letter-spacing: .08em; }
+.reference {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 12px;
+  border-left: 2px solid #000;
+  text-align: right;
+}
+.reference span, footer span { font-size: 9px; letter-spacing: .12em; }
+.reference strong { margin-top: 5px; font-size: 17px; }
+.telemetry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 10px;
+  background: #000;
+  color: #fff;
+  font-size: 13px;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+.telemetry strong { margin-left: 5px; font-weight: 400; }
+.plot-shell { position: relative; min-height: 0; padding-left: 25px; border: 2px solid #000; }
+.plot-label {
+  position: absolute;
+  top: 50%;
+  left: -63px;
+  width: 145px;
+  transform: rotate(-90deg) translateY(-50%);
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-align: center;
+}
+.plot { display: block; width: 100%; height: calc(100% - 17px); }
+.grid line { stroke: #000; stroke-width: .45; stroke-dasharray: 2 5; opacity: .5; }
+.separator { stroke: #000; stroke-width: 1.2; stroke-dasharray: 8 4; }
+.trace { fill: none; stroke: #000; stroke-width: 1.8; vector-effect: non-scaling-stroke; }
+.trace-1 { stroke-dasharray: 9 3; }
+.trace-2 { stroke-width: 2.5; }
+.trace-3 { stroke-dasharray: 3 2; }
+.trace-4 { stroke-width: 1.2; stroke-dasharray: 12 3 2 3; }
+.trace-5 { stroke-width: 2.1; stroke-dasharray: 5 2; }
+.channel-label {
+  fill: #000;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+  font: 700 11px "ReceiptPixel", "Courier New", monospace;
+  letter-spacing: .08em;
+}
+.axis-row { display: flex; justify-content: space-between; padding: 1px 8px 0; font-size: 9px; letter-spacing: .08em; }
+.channel-stats {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 5px;
+  overflow: hidden;
+}
+.channel-stats div {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  min-width: 0;
+  padding: 4px 7px;
+  border: 1px solid #000;
+  white-space: nowrap;
+}
+.channel-stats strong { padding-right: 8px; border-right: 2px solid #000; font-size: 12px; }
+.channel-stats span { font-size: 9px; }
+footer {
+  display: grid;
+  grid-template-columns: 180px 170px 190px 220px 1fr;
+  align-items: stretch;
+  border-top: 3px solid #000;
+}
+footer > div { display: flex; flex-direction: column; justify-content: center; padding: 6px 12px; border-right: 1px solid #000; }
+footer > div strong { margin-top: 4px; font-size: 12px; }
+footer .status { flex-direction: row; align-items: center; gap: 9px; }
+.status i { width: 11px; height: 11px; background: #000; border-radius: 50%; }
+footer p { display: flex; align-items: center; margin: 0; padding: 0 12px; font-size: 10px; line-height: 1.25; letter-spacing: .05em; }

@@ -14,6 +14,25 @@ import click
 import yaml
 
 SCHEMA_VERSION = 1
+_FONT_FORMAT_BY_SUFFIX = {
+    ".otf": "opentype",
+    ".ttf": "truetype",
+    ".woff": "woff",
+    ".woff2": "woff2",
+}
+_RESERVED_OPTION_FLAGS = {
+    "--config",
+    "-c",
+    "--cut",
+    "--no-cut",
+    "--dither",
+    "--output",
+    "-o",
+    "--product-id",
+    "--threshold",
+    "--vendor-id",
+    "--width",
+}
 _RESERVED_OPTION_NAMES = {
     "config",
     "cut",
@@ -49,11 +68,15 @@ class OptionSpec:
         if self.choices:
             return click.Choice(self.choices)
         if self.value_type == "integer":
+            if self.minimum is None and self.maximum is None:
+                return click.INT
             return click.IntRange(
                 min=cast(int | None, self.minimum),
                 max=cast(int | None, self.maximum),
             )
         if self.value_type == "number":
+            if self.minimum is None and self.maximum is None:
+                return click.FLOAT
             return click.FloatRange(
                 min=cast(float | None, self.minimum),
                 max=cast(float | None, self.maximum),
@@ -80,6 +103,15 @@ class OptionSpec:
 
 
 @dataclass(frozen=True)
+class FontSpec:
+    file: str
+    family: str
+    font_format: str
+    weight: str = "400"
+    style: str = "normal"
+
+
+@dataclass(frozen=True)
 class TemplateModule:
     name: str
     description: str
@@ -87,9 +119,10 @@ class TemplateModule:
     html_file: str
     stylesheet_file: str
     generator_file: str | None
-    font_file: str | None
-    font_family: str | None
-    font_format: str | None
+    fonts: tuple[FontSpec, ...]
+    orientation: str
+    canvas_length: int | None
+    canvas_length_from: str | None
     options: tuple[OptionSpec, ...]
 
     def build_context(self, values: Mapping[str, object]) -> dict[str, object]:
@@ -117,6 +150,24 @@ class TemplateModule:
                 f"{generator_path} build_context() must return a string-keyed mapping"
             )
         return cast(dict[str, object], result)
+
+    def resolve_canvas_length(
+        self, context: Mapping[str, object], printable_width: int
+    ) -> int | None:
+        length: object = self.canvas_length
+        if self.canvas_length_from is not None:
+            generated = context.get(self.canvas_length_from)
+            if generated is not None:
+                length = generated
+        if length is None:
+            return None
+        if isinstance(length, bool) or not isinstance(length, int):
+            raise ManifestError("generated canvas length must be an integer")
+        if length < printable_width:
+            raise ManifestError(
+                f"generated canvas length must be at least {printable_width}"
+            )
+        return length
 
 
 def _load_python_module(name: str, path: Path) -> ModuleType:
@@ -164,6 +215,34 @@ def _sequence(value: object, field: str) -> Sequence[object]:
     return value
 
 
+def _load_font(value: object, field: str) -> FontSpec:
+    data = _mapping(value, field)
+    filename = _string(data.get("file"), f"{field}.file")
+    family = _string(data.get("family", Path(filename).stem), f"{field}.family")
+    format_value = data.get("format")
+    if format_value is None:
+        font_format = _FONT_FORMAT_BY_SUFFIX.get(Path(filename).suffix.lower())
+        if font_format is None:
+            raise ManifestError(
+                f"{field}.format is required for an unknown font extension"
+            )
+    else:
+        font_format = _string(format_value, f"{field}.format")
+    if font_format not in set(_FONT_FORMAT_BY_SUFFIX.values()):
+        raise ManifestError(f"{field}.format must be truetype, opentype, woff or woff2")
+    weight = str(data.get("weight", "400"))
+    style = _string(data.get("style", "normal"), f"{field}.style")
+    if style not in {"normal", "italic", "oblique"}:
+        raise ManifestError(f"{field}.style must be normal, italic or oblique")
+    return FontSpec(
+        file=filename,
+        family=family,
+        font_format=font_format,
+        weight=weight,
+        style=style,
+    )
+
+
 def _load_option(value: object, index: int) -> OptionSpec:
     field = f"options[{index}]"
     data = _mapping(value, field)
@@ -180,6 +259,11 @@ def _load_option(value: object, index: int) -> OptionSpec:
     )
     if not flags or any(not flag.startswith("-") for flag in flags):
         raise ManifestError(f"{field}.flags must contain CLI option names")
+    conflicts = sorted(set(flags) & _RESERVED_OPTION_FLAGS)
+    if conflicts:
+        raise ManifestError(
+            f"{field}.flags conflict with core options: {', '.join(conflicts)}"
+        )
 
     value_type = _string(data.get("type", "string"), f"{field}.type")
     if value_type not in {"string", "integer", "number", "boolean", "path"}:
@@ -235,18 +319,61 @@ def load_template_module(directory: Path) -> TemplateModule:
     generator_file = (
         _string(generator_value, "generator") if generator_value is not None else None
     )
-    font_value = data.get("font")
-    if font_value is None:
-        font_file = None
-        font_family = None
-        font_format = None
+    render_value = data.get("render")
+    if render_value is None:
+        orientation = "portrait"
+        canvas_length = None
+        canvas_length_from = None
     else:
-        font_data = _mapping(font_value, "font")
-        font_file = _string(font_data.get("file"), "font.file")
-        font_family = _string(font_data.get("family", "ReceiptPixel"), "font.family")
-        font_format = _string(font_data.get("format", "truetype"), "font.format")
-        if font_format not in {"truetype", "opentype", "woff2"}:
-            raise ManifestError("font.format must be truetype, opentype or woff2")
+        render_data = _mapping(render_value, "render")
+        orientation = _string(
+            render_data.get("orientation", "portrait"), "render.orientation"
+        )
+        if orientation not in {"portrait", "landscape"}:
+            raise ManifestError("render.orientation must be portrait or landscape")
+        length_value = render_data.get("canvas_length")
+        if length_value is None:
+            canvas_length = None
+        elif isinstance(length_value, bool) or not isinstance(length_value, int):
+            raise ManifestError("render.canvas_length must be an integer")
+        else:
+            canvas_length = length_value
+        length_from_value = render_data.get("canvas_length_from")
+        canvas_length_from = (
+            _string(length_from_value, "render.canvas_length_from")
+            if length_from_value is not None
+            else None
+        )
+        if canvas_length_from is not None and not _NAME_PATTERN.fullmatch(
+            canvas_length_from
+        ):
+            raise ManifestError(
+                "render.canvas_length_from must use lowercase snake_case"
+            )
+        if (
+            orientation == "landscape"
+            and canvas_length is None
+            and canvas_length_from is None
+        ):
+            raise ManifestError(
+                "landscape modules require canvas_length or canvas_length_from"
+            )
+        if canvas_length is not None and canvas_length < 384:
+            raise ManifestError("render.canvas_length must be at least 384")
+
+    font_value = data.get("font")
+    fonts_value = data.get("fonts")
+    if font_value is not None and fonts_value is not None:
+        raise ManifestError("use either font or fonts, not both")
+    if fonts_value is not None:
+        fonts = tuple(
+            _load_font(value, f"fonts[{index}]")
+            for index, value in enumerate(_sequence(fonts_value, "fonts"))
+        )
+    elif font_value is not None:
+        fonts = (_load_font(font_value, "font"),)
+    else:
+        fonts = ()
 
     for filename, field in ((html_file, "template"), (stylesheet_file, "stylesheet")):
         if not (directory / filename).is_file():
@@ -255,8 +382,9 @@ def load_template_module(directory: Path) -> TemplateModule:
         raise ManifestError(
             f"generator file does not exist: {directory / generator_file}"
         )
-    if font_file is not None and not (directory / font_file).is_file():
-        raise ManifestError(f"font file does not exist: {directory / font_file}")
+    for font in fonts:
+        if not (directory / font.file).is_file():
+            raise ManifestError(f"font file does not exist: {directory / font.file}")
 
     raw_options = _sequence(data.get("options", []), "options")
     options = tuple(
@@ -265,6 +393,9 @@ def load_template_module(directory: Path) -> TemplateModule:
     option_names = [option.name for option in options]
     if len(option_names) != len(set(option_names)):
         raise ManifestError(f"{manifest_path}: option names must be unique")
+    option_flags = [flag for option in options for flag in option.flags]
+    if len(option_flags) != len(set(option_flags)):
+        raise ManifestError(f"{manifest_path}: option flags must be unique")
 
     return TemplateModule(
         name=name,
@@ -273,9 +404,10 @@ def load_template_module(directory: Path) -> TemplateModule:
         html_file=html_file,
         stylesheet_file=stylesheet_file,
         generator_file=generator_file,
-        font_file=font_file,
-        font_family=font_family,
-        font_format=font_format,
+        fonts=fonts,
+        orientation=orientation,
+        canvas_length=canvas_length,
+        canvas_length_from=canvas_length_from,
         options=options,
     )
 
@@ -301,8 +433,8 @@ def create_template_skeleton(
     destination.mkdir(parents=True)
     (destination / "assets").mkdir()
     schema_comment = (
-        "# yaml-language-server: $schema=../../template.schema.json\n"
-        if (template_root.parent / "template.schema.json").is_file()
+        "# yaml-language-server: $schema=../../template-module-v1.schema.json\n"
+        if (template_root.parent / "template-module-v1.schema.json").is_file()
         else ""
     )
     generator_declaration = "generator: generator.py\n" if with_generator else ""
@@ -349,6 +481,37 @@ body { font-family: monospace; }
 .receipt { width: 100%; padding: 12px 10px 24px; font-size: 18px; }
 h1 { margin: 0 0 16px; border-bottom: 2px solid #000; font-size: 28px; }
 p { margin: 0; overflow-wrap: anywhere; }
+""",
+        encoding="utf-8",
+    )
+    generator_note = (
+        "This module uses `generator.py` to build its Jinja2 context."
+        if with_generator
+        else "This is a declarative module; manifest options are passed directly to Jinja2."
+    )
+    (destination / "README.md").write_text(
+        f"""# `{name}` template
+
+{manifest_description}
+
+{generator_note}
+
+## Preview
+
+```shell
+uv run pdv-escpos {name} render \\
+  --message "Hello from {name}" \\
+  --output output/{name}.png
+```
+
+## Build and print
+
+```shell
+uv run pdv-escpos {name} build --output output/{name}.bin
+uv run pdv-escpos {name} print --no-cut
+```
+
+Document module-specific options, input formats and editing instructions in this file.
 """,
         encoding="utf-8",
     )

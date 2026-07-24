@@ -86,9 +86,7 @@ def test_intelligences_template_renders_at_printer_width() -> None:
         config,
         html_file=MODULE.html_file,
         stylesheet_file=MODULE.stylesheet_file,
-        font_file=MODULE.font_file,
-        font_family=MODULE.font_family,
-        font_format=MODULE.font_format,
+        fonts=MODULE.fonts,
     )
     thermal = prepare_for_thermal_print(image, config)
 
