@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width={{ receipt_width }}, initial-scale=1" />
+    <style>{{ stylesheet | safe }}</style>
+  </head>
+  <body>
+    <article id="receipt" class="receipt" aria-label="Ricevuta facsimile non fiscale">
+      {#
+        <div class="warning top">FACSIMILE · NON FISCALE · PRIVO DI VALIDITÀ</div>
+      #}
+
+
+      <header>
+        <img class="logo" src="{{ logo_data }}" alt="{{ logo_name }}" />
+        <h1>{{ company_name }}</h1>
+        {% for line in company_lines %}<p>{{ line }}</p>{% endfor %}
+        <p class="vat">P.IVA / ID (FACSIMILE): {{ vat_id }}</p>
+      </header>
+
+      <section class="document-meta">
+        <div><span>DOCUMENTO</span><strong>RICEVUTA FACSIMILE</strong></div>
+        <div><span>NUMERO</span><strong>{{ receipt_number }}</strong></div>
+        <div><span>DATA</span><strong>{{ issued_date }} {{ issued_time }}</strong></div>
+        <div><span>REGISTRATORE</span><strong>{{ register_id }}</strong></div>
+        <div><span>OPERATORE</span><strong>{{ operator }}</strong></div>
+        {% if customer_code %}<div><span>CLIENTE DEMO</span><strong>{{ customer_code }}</strong></div>{% endif %}
+      </section>
+
+      <section class="items-section">
+        <div class="items-heading"><span>DESCRIZIONE</span><span>IMPORTO</span></div>
+        <ol class="items">
+          {% for item in items %}
+          <li>
+            <div class="item-main">
+              <span>{{ "%02d" | format(item.index) }} {{ item.description }}</span>
+              <strong>{{ item.line_total }}</strong>
+            </div>
+            <div class="item-detail">
+              <span>{{ item.quantity }} × {{ item.unit_price }}</span>
+              <span>IVA {{ item.tax_rate }}</span>
+            </div>
+          </li>
+          {% endfor %}
+        </ol>
+      </section>
+
+      <section class="summary">
+        <div><span>NUMERO ARTICOLI</span><strong>{{ item_count }}</strong></div>
+        <div><span>IMPONIBILE</span><strong>{{ taxable_total }}</strong></div>
+        <div><span>IVA</span><strong>{{ tax_total }}</strong></div>
+        <div class="grand-total"><span>TOTALE</span><strong>{{ total }}</strong></div>
+      </section>
+
+      <section class="tax-table">
+        <h2>RIEPILOGO IVA — DATI DIMOSTRATIVI</h2>
+        <div class="tax-heading"><span>ALIQUOTA</span><span>IMPONIBILE</span><span>IVA</span></div>
+        {% for tax in taxes %}
+        <div><span>{{ tax.rate }}</span><span>{{ tax.taxable }}</span><span>{{ tax.tax }}</span></div>
+        {% endfor %}
+      </section>
+
+      <section class="payment">
+        <div><span>METODO</span><strong>{{ payment_method }}</strong></div>
+        <div><span>PAGATO</span><strong>{{ paid }}</strong></div>
+        {% if has_change %}<div><span>RESTO</span><strong>{{ change }}</strong></div>{% endif %}
+        {% if has_balance %}<div><span>RESIDUO</span><strong>{{ balance }}</strong></div>{% endif %}
+      </section>
+
+      <div class="barcode" aria-hidden="true">
+        {% for width in bars %}<i style="width: {{ width }}px"></i>{% endfor %}
+      </div>
+      <p class="verification">{{ verification_code }}</p>
+
+      <footer>
+        {% for line in footer_lines %}<p>{{ line }}</p>{% endfor %}
+      </footer>
+    </article>
+  </body>
+</html>

@@ -527,6 +527,7 @@ Copy the YAML language-server comment from another module, ensure `schema_versio
 Each bundled module keeps its operating instructions beside its manifest, generator and assets:
 
 - [`demo`](src/pdv_escpos/templates/demo/README.md)
+- [`facsimile-receipt`](src/pdv_escpos/templates/facsimile-receipt/README.md)
 - [`intelligences`](src/pdv_escpos/templates/intelligences/README.md)
 - [`signal-readout`](src/pdv_escpos/templates/signal-readout/README.md)
 - [`testing`](src/pdv_escpos/templates/testing/README.md)

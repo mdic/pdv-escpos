@@ -1,0 +1,103 @@
+# yaml-language-server: $schema=../../template-module-v1.schema.json
+schema_version: 1
+name: facsimile-receipt
+description: Clearly marked non-fiscal facsimile receipt with logo, company data and purchased goods.
+template: template.html.j2
+stylesheet: style.css
+generator: generator.py
+fonts:
+  - file: assets/ThermalTicket-Regular.ttf
+    family: ReceiptPixel
+
+options:
+  - name: company_name
+    flags: [--company-name]
+    type: string
+    default: NEBULA SUPPLY CO.
+    help: Fictional company name.
+
+  - name: company_line
+    flags: [--company-line]
+    type: string
+    repeatable: true
+    help: Company address or contact line. Repeat for multiple lines.
+
+  - name: vat_id
+    flags: [--vat-id]
+    type: string
+    default: DEMO-00000000000
+    help: Fictional tax identifier printed as a facsimile value.
+
+  - name: logo
+    flags: [--logo]
+    type: path
+    help: Local SVG or PNG header image. Uses the bundled placeholder when omitted.
+
+  - name: item
+    flags: [--item, -i]
+    type: string
+    repeatable: true
+    help: Item as description|quantity|unit_price|tax_rate. Repeat for multiple goods.
+
+  - name: items_file
+    flags: [--items-file]
+    type: path
+    help: CSV or JSON item list. May be combined with repeated --item values.
+
+  - name: currency
+    flags: [--currency]
+    type: string
+    choices: [EUR, USD, GBP, CHF]
+    default: EUR
+    help: Currency used for prices and totals.
+
+  - name: payment_method
+    flags: [--payment-method]
+    type: string
+    choices: [cash, card, transfer, voucher]
+    default: card
+    help: Fictional payment method.
+
+  - name: paid
+    flags: [--paid]
+    type: number
+    minimum: 0
+    help: Amount tendered. Defaults to the calculated total.
+
+  - name: receipt_number
+    flags: [--receipt-number]
+    type: string
+    help: Receipt number override.
+
+  - name: register_id
+    flags: [--register-id]
+    type: string
+    default: RT-DEMO-01
+    help: Fictional register identifier.
+
+  - name: operator
+    flags: [--operator]
+    type: string
+    default: OP-01
+    help: Fictional operator identifier.
+
+  - name: issued_at
+    flags: [--issued-at]
+    type: string
+    help: ISO date/time override. Defaults to the current local time.
+
+  - name: customer_code
+    flags: [--customer-code]
+    type: string
+    help: Optional fictional customer or loyalty code.
+
+  - name: footer_line
+    flags: [--footer-line]
+    type: string
+    repeatable: true
+    help: Custom footer line. Repeat for multiple lines.
+
+  - name: seed
+    flags: [--seed]
+    type: string
+    help: Seed for reproducible receipt number and decorative code.

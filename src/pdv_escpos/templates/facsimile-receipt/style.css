@@ -1,0 +1,72 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #fff; color: #000; }
+body { width: 100%; font-family: "ReceiptPixel", "Courier New", monospace; }
+.receipt {
+  width: 100%;
+  padding: 10px 10px 28px;
+  overflow: hidden;
+  background: #fff;
+  font-size: 17px;
+  line-height: 1.08;
+}
+.warning {
+  padding: 6px 4px;
+  border: 2px solid #000;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-align: center;
+}
+.warning.top { margin-bottom: 14px; background: #000; color: #fff; }
+header { padding-bottom: 12px; border-bottom: 2px dashed #000; text-align: center; }
+.logo { display: block; max-width: 190px; max-height: 72px; margin: 0 auto 9px; object-fit: contain; }
+h1 { margin: 0 0 7px; font-size: 28px; line-height: .9; letter-spacing: .03em; }
+header p { margin: 3px 0 0; font-size: 14px; }
+header .vat { margin-top: 8px; font-size: 13px; font-weight: 700; }
+.document-meta, .summary, .payment { margin-top: 12px; }
+.document-meta div, .summary div, .payment div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 5px;
+}
+.document-meta div::before, .summary div::before, .payment div::before {
+  order: 2;
+  flex: 1;
+  overflow: hidden;
+  content: "........................................................";
+  white-space: nowrap;
+}
+.document-meta span, .summary span, .payment span { order: 1; white-space: nowrap; }
+.document-meta strong, .summary strong, .payment strong { order: 3; font-weight: 400; text-align: right; }
+.items-section { margin-top: 15px; border-top: 3px solid #000; }
+.items-heading, .tax-heading {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  padding: 6px 0 5px;
+  border-bottom: 1px solid #000;
+  font-size: 14px;
+  font-weight: 700;
+}
+.items { margin: 0; padding: 0; list-style: none; }
+.items li { padding: 8px 0 7px; border-bottom: 1px dashed #000; }
+.item-main { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.item-main span { overflow-wrap: anywhere; }
+.item-main strong { font-weight: 400; white-space: nowrap; }
+.item-detail { display: flex; justify-content: space-between; margin: 4px 0 0 24px; font-size: 13px; }
+.summary { padding-top: 4px; border-top: 2px solid #000; }
+.summary .grand-total { margin-top: 8px; padding: 7px 5px; border: 3px double #000; font-size: 27px; }
+.summary .grand-total::before { display: none; }
+.summary .grand-total strong { font-size: 29px; font-weight: 700; }
+.tax-table { margin-top: 15px; padding-bottom: 8px; border-bottom: 2px dashed #000; }
+h2 { margin: 0; padding: 5px; background: #000; color: #fff; font-size: 14px; font-weight: 400; text-align: center; }
+.tax-heading, .tax-table > div { grid-template-columns: 70px 1fr 1fr; text-align: right; }
+.tax-table > div { display: grid; gap: 6px; padding-top: 4px; }
+.tax-table > div span:first-child { text-align: left; }
+.payment { padding-bottom: 10px; border-bottom: 2px solid #000; }
+.barcode { display: flex; justify-content: center; gap: 2px; height: 42px; margin-top: 16px; overflow: hidden; }
+.barcode i { display: block; height: 100%; background: #000; }
+.verification { margin: 4px 0 0; font-size: 12px; letter-spacing: .1em; text-align: center; }
+footer { margin-top: 15px; text-align: center; }
+footer p { margin: 4px 0 0; font-size: 15px; }
+.warning.bottom { margin-top: 14px; font-size: 13px; }
