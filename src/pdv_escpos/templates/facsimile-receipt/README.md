@@ -9,13 +9,17 @@ It includes a logo, fictional company data, document metadata, purchased goods, 
 ```shell
 uv run pdv-escpos facsimile-receipt render \
   --company-name "NEBULA SUPPLY CO." \
+  --logo artwork/company-mark.svg \
   --company-line "Via delle Orbite 42 · Città Demo" \
   --company-line "info@example.invalid" \
   --vat-id "DEMO-00000000000" \
+  --receipt-number "123" \
   --item "Synthetic coffee|2|1.40|10" \
   --item "Orbital notebook|1|6.90|22" \
   --item "Signal adapter|1|12.50|22" \
   --payment-method card \
+  --issued-at "2026-07-27T18:38:49" \
+  --register-id "RT-DEMO-01" \
   --seed "RECEIPT-DEMO-001" \
   --output output/facsimile-receipt.png
 ```
